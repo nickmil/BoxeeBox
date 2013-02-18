@@ -134,6 +134,10 @@
 <FilePathName>BoxeeBox_Comm_v01.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="MasterSrc"><Identifier>BoxeeBox_Demo_v01</Identifier>
+<FilePathName>BoxeeBox_Demo_v01.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="None" Type="TP4"><Identifier>BoxeeBox_UI_MVP9000i</Identifier>
 <FilePathName>BoxeeBox_UI_MVP9000i.TP4</FilePathName>
 <Comments></Comments>
