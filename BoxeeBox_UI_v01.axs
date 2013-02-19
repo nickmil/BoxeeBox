@@ -98,6 +98,9 @@ DEFINE_EVENT		//---Menu Navigation
 	BUTTON_EVENT [dvTP,50] {		//---Menu
 		PUSH : SEND_COMMAND vdvDev,"'MENU'"
 	}
+	BUTTON_EVENT [dvTP,51] {		//---Menu - Exit
+		PUSH : SEND_COMMAND vdvDev,"'MENU-EXIT'"
+	}
 	
 DEFINE_EVENT
 	BUTTON_EVENT [dvTP,100] {		//---Shift Key
