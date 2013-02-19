@@ -7,35 +7,35 @@ With the release of Eden, XBMC has moved to a JSON API.
 This module is provided free of charge with no warranty or guarantee of functionality.
 Please refer to the Demo AMX workspace for guidance on implementation.
 
-| COMM Module SEND_COMMANDS  |      |
-|----------------------|
-| PLAY | Play/Pause current media |
-| PAUSE | Same as Play Above |
-| PLAYPAUSE | Same as PLAY & PAUSE |
-| STOP | Stops current media playback |
-| MUTE | Mutes volume out of Boxee Box (Toggle) |
-| NEXT | Skips to the next media in playlist |
-| PREVIOUS | Returns to beginning, or jumps back |
-| MENU | Simulates Menu button on the remote |
-| MENU-UP | DPad Up |
-| MENU-DOWN | DPad Down |
-| MENU-LEFT | DPad Left |
-| MENU-RIGHT | DPad Right |
-| MENU-OK | DPad Center Button |
-| MENU-SELECT | Same as MENU-OK |
-| MENU-ENTER | Same as MENU-OK |
-| MENU-EXIT | Exit Button |
-| KEYBOARD-DELETE | Keyboard Backspace |
-| KEYBOARD-SPACE | Space Bar |
-| KEYBOARD-* | * = ASCII Representation of desired key |
-| ?VOLUME | Queries current volume |
-| VOLUME-UP | 1% Relative volume adjustment |
-| VOLUME-DOWN | 1% Relative volume adjustment |
-| VOLUME-* | * = Integer representation of absolute volume percentage |
-| ?PROGRESS | Queries progress percentage of current media |
-| JUMP_TO_PCT-* | * = Integer representation of desired location |
-| SEEK_PCT-* | * = Relative jump in current media (percentage) |
-| ?NOW_PLAYING | Future |
+| COMM Module SEND_COMMANDS                                              |
+|------------------------------------------------------------------------|
+| PLAY            | Play/Pause current media                             |
+| PAUSE           | Same as Play Above                                   |
+| PLAYPAUSE       | Same as PLAY & PAUSE                                 |
+| STOP            | Stops current media playback                         |
+| MUTE            | Mutes volume out of Boxee Box (Toggle)               |
+| NEXT            | Skips to the next media in playlist                  |
+| PREVIOUS        | Returns to beginning, or jumps back                  |
+| MENU            | Simulates Menu button on the remote                  |
+| MENU-UP         | DPad Up                                              |
+| MENU-DOWN       | DPad Down                                            |
+| MENU-LEFT       | DPad Left                                            |
+| MENU-RIGHT      | DPad Right                                           |
+| MENU-OK         | DPad Center Button                                   |
+| MENU-SELECT     | Same as MENU-OK                                      |
+| MENU-ENTER      | Same as MENU-OK                                      |
+| MENU-EXIT       | Exit Button                                          |
+| KEYBOARD-DELETE | Keyboard Backspace                                   |
+| KEYBOARD-SPACE  | Space Bar                                            |
+| KEYBOARD-*      | * = ASCII Representation of desired key              |
+| ?VOLUME         | Queries current volume                               |
+| VOLUME-UP       | 1% Relative volume adjustment                        |
+| VOLUME-DOWN     | 1% Relative volume adjustment                        |
+| VOLUME-*        | * = Integer representation of absolute volume pct    |
+| ?PROGRESS       | Queries progress percentage of current media         |
+| JUMP_TO_PCT-*   | * = Integer representation of desired location       |
+| SEEK_PCT-*      | * = Relative jump in current media (percentage)      |
+| ?NOW_PLAYING    | Future                                               |
 
 | Instantiation & Debug SEND_COMMANDS |   |
 |------|
