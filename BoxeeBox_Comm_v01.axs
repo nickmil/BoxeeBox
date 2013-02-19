@@ -276,6 +276,14 @@ DEFINE_EVENT
 					BBox.Comm.cBuf = ''
 					OFF[BBox.Comm.nBusy]
 				}
+				ACTIVE (cCmd=='REINIT') : {
+					BBox.Comm.cQue = ''
+					BBox.Comm.cBuf = ''
+					ON[BBox.Comm.nBusy]
+					IP_CLIENT_CLOSE(dvDev.PORT)
+					WAIT 10
+						OFF[BBox.Comm.nBusy]
+				}
 				
 				ACTIVE (1) : DebugString(1,"'ERROR - Unhandled Command'")
 			}

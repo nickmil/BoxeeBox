@@ -138,6 +138,10 @@
 <FilePathName>BoxeeBox_Demo_v01.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="None" Type="TP4"><Identifier>BoxeeBox_UI_MVP5200i</Identifier>
+<FilePathName>BoxeeBox_UI_MVP5200i.TP4</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="None" Type="TP4"><Identifier>BoxeeBox_UI_MVP9000i</Identifier>
 <FilePathName>BoxeeBox_UI_MVP9000i.TP4</FilePathName>
 <Comments></Comments>

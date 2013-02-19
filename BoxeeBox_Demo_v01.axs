@@ -19,9 +19,14 @@ DEFINE_EVENT
 			SEND_COMMAND vdvBoxeeBox,"'PROPERTY-IP_Address,192.168.1.106'"
 			SEND_COMMAND vdvBoxeeBox,"'PROPERTY-TCP_Port,8800'"
 			SEND_COMMAND vdvBoxeeBox,"'PROPERTY-Poll_Time,60'"
-			SEND_COMMAND vdvBoxeeBox,"'PROPERTY-Progress_Poll,0'"
+			SEND_COMMAND vdvBoxeeBox,"'PROPERTY-Progress_Poll,1'"
 			SEND_COMMAND vdvBoxeeBox,"'DEBUG-1'"
 		}
+	}
+	
+DEFINE_EVENT
+	DATA_EVENT [dvTP_BoxeeBox] {
+		ONLINE : SEND_COMMAND dvTP_BoxeeBox,"'ADBEEP'"
 	}
 	
 //-----------------------------------------------------------------------------

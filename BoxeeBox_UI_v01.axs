@@ -175,18 +175,21 @@ DEFINE_EVENT
 DEFINE_EVENT
 	LEVEL_EVENT [vdvDev,1] {
 		SEND_LEVEL dvTP,1,LEVEL.VALUE
-		SEND_COMMAND dvTP,"'^TXT-1,0,',ITOA(LEVEL.VALUE)"
+		SEND_COMMAND dvTP,"'^TXT-1,0,',ITOA(LEVEL.VALUE),'%'"
 	}
 	LEVEL_EVENT [vdvDev,2] {
 		SEND_LEVEL dvTP,2,LEVEL.VALUE
-		SEND_COMMAND dvTP,"'^TXT-2,0,',ITOA(LEVEL.VALUE)"
+		SEND_COMMAND dvTP,"'^TXT-2,0,',ITOA(LEVEL.VALUE),'%'"
 	}
 	
 //-----------------------------------------------------------------------------
 
 DEFINE_EVENT
 	DATA_EVENT [dvTP] {
-		ONLINE : ClearNowPlaying()
+		ONLINE : {
+			ClearNowPlaying()
+			SEND_COMMAND vdvDev,"'?VOLUME'"
+		}
 	}
 
 //-----------------------------------------------------------------------------
