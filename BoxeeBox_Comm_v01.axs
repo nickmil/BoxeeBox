@@ -2,27 +2,27 @@ MODULE_NAME='BoxeeBox_Comm_v01' (DEV vdvDev,DEV dvDev)
 
 DEFINE_TYPE
 	STRUCTURE _Debug {
-		INTEGER nDebugLevel
+		INTEGER nDebugLevel		//---Current level of debug strings sent to console (See DebugString subroutine below)
 	}
 	STRUCTURE _Comm {
-		CHAR cIPAddress[15]
-		INTEGER nTCPPort
-		INTEGER nCommTimeout
+		CHAR cIPAddress[15]			//---IP Address of the Boxee Box (? Increase byte count to allow for hostnames ?)
+		INTEGER nTCPPort				//---Default from Boxee is 8800 for API calls
+		INTEGER nCommTimeout		//---How long before we give up on a response?
 		
-		CHAR cQue[2048]
-		CHAR cBuf[2048]
-		CHAR cLastGet[512]
-		INTEGER nBusy
+		CHAR cQue[2048]					//---Que of strings waiting to be sent to device
+		CHAR cBuf[2048]					//---Buffer of Acks returned from device
+		CHAR cLastGet[512]			//---What was the last request I sent to the device?
+		INTEGER nBusy					//---Waiting for a response back from the device
 		
-		LONG lPollTime
+		LONG lPollTime					//---How frequently should we poll (Thousandths)
 	}
 	STRUCTURE _BBox {
-		_Comm Comm
-		_Debug Debug
+		_Comm Comm							//---See notes above
+		_Debug Debug						//---See notes above
 		
-		INTEGER nVolumePct
-		INTEGER nProgressPct
-		INTEGER nProgressPoll
+		INTEGER nVolumePct			//---Current Volume setting (0-100%)
+		INTEGER nProgressPct		//---Current Playback Progress (0-100%)
+		INTEGER nProgressPoll	//---Should we poll (each second) for progress (!!! High Network Traffic !!!)
 	}
 	
 	
@@ -38,11 +38,21 @@ DEFINE_VARIABLE
 //-----------------------------------------------------------------------------
 
 DEFINE_FUNCTION DebugString(INTEGER nLevel,CHAR cString[]) {
+	//---Sends the appropriate debug strings to the console.
+	//---1-ERRORS Only
+	//---2-Asynchronous Strings from Device
+	//---3-Acks to code driven actions
+	//---4-All Data & parsing)
+	
 	IF(nLevel<=BBox.Debug.nDebugLevel) {
 		SEND_STRING 0,"'BoxeeBox - ',cString"
 	}
 }
 DEFINE_FUNCTION SendQue() {
+	//---Waits until we are not waiting for a response from device.
+	//---Checks to see if there is anything to send.
+	//---Resides in mainline.
+	
 	LOCAL_VAR CHAR cCmd[64]
 	IF(!BBox.Comm.nBusy && FIND_STRING(BBox.Comm.cQue,"$0B,$0B",1)) {
 		ON[BBox.Comm.nBusy]
@@ -50,6 +60,9 @@ DEFINE_FUNCTION SendQue() {
 	}
 }
 DEFINE_FUNCTION AddHTTPGet(CHAR cShortURI[]) {
+	//---Add an HTTP GET request to BBox.Comm.cQue
+	//---To be instantiated by SendQue above
+	
 	STACK_VAR CHAR cURLString[512]
 	STACK_VAR CHAR cHeader[512]
 	
@@ -67,10 +80,10 @@ DEFINE_FUNCTION AddHTTPGet(CHAR cShortURI[]) {
 	BBox.Comm.cQue = "BBox.Comm.cQue,cHeader,$0B,$0B"
 	DebugString(3,"'AddHTTPGet : ',cShortURI")
 }
-DEFINE_FUNCTION AddToQue(CHAR cCmd[]) {
-	BBox.Comm.cQue = "BBox.Comm.cQue,cCmd,$0B,$0B"
-} 
 DEFINE_CALL 'OpenSocket' {
+	//---Opens a client socket and waits for the device to come online
+	//---Errors listed are those reported by AMX socket handler
+
 	STACK_VAR SINTEGER nError 
 	STACK_VAR CHAR cError[32]
 	
@@ -93,29 +106,43 @@ DEFINE_CALL 'OpenSocket' {
 		DebugString(1,"'ERROR-Socket Connection Error: ',cError")
 	}
 	ELSE {
-		DebugString(2,"'OpenSocket - Socket opened successfully'")
+		DebugString(3,"'OpenSocket - Socket opened successfully'")
 	}
 }
 
 //-----------------------------------------------------------------------------Parsing Routines
 
 DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
+	//---Received a string from the device,
+	//---Now lets do something intelligent with it.
+
 	LOCAL_VAR CHAR cHTTPResponseCode[8]
 	LOCAL_VAR LONG nHTMLStart
 	LOCAL_VAR LONG nHTMLEnd
 	LOCAL_VAR CHAR cHTML[2048]
-	LOCAL_VAR CHAR cAck[128]
+	LOCAL_VAR CHAR cAck[2048]
+	LOCAL_VAR CHAR cTempPara[32][2][32]
+	LOCAL_VAR INTEGER nTempPara
+	LOCAL_VAR INTEGER nPointer
 	
-	DebugString(4,"'Parsing : ',cBuf")
-	
+	//DebugString(4,"'Parsing : ',cBuf")
 	
 	REMOVE_STRING(cBuf,"$0D,$0A,$0D,$0A,'b',$0D,$0A",1)
 	SET_LENGTH_STRING(cBuf,LENGTH_STRING(cBuf)-7)
-	DebugString(4,"'Parse-able data : ',cBuf")
+	
+	//DebugString(4,"'Parse-able data : ',cBuf")
+	//---Responses are too long for a single line in debug
+	//---Break it up into usable chunks.
+	nPointer = 1
+	WHILE(LENGTH_STRING(cBuf)>nPointer) {
+		DebugString(4,"'Parsing : ',MID_STRING(cBuf,nPointer,120)")
+		nPointer = nPointer+120
+	}
 	
 	REMOVE_STRING(cBuf,"'HTTP/1.0 '",1)
 	cHTTPResponseCode = REMOVE_STRING(cBuf,"$0D,$0A",1)
 	SELECT {
+		//---HTTP Error Codes from Device
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'401',1)) : DebugString(1,'ERROR - HTTP Response Code: 401, Unauthorized')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'402',1)) : DebugString(1,'ERROR - HTTP Response Code: 402, Payment Required')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'403',1)) : DebugString(1,'ERROR - HTTP Response Code: 403, Forbidden')
@@ -131,6 +158,7 @@ DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'413',1)) : DebugString(1,'ERROR - HTTP Response Code: 413, Request Entity Too Large')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'414',1)) : DebugString(1,'ERROR - HTTP Response Code: 414, Request URI Too Long')
 		
+		//---Acknowledgement of Properly encoded message
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'200 OK',1)) : {
 			DebugString(4,'HTTP Response Code: 200, OK!')
 			
@@ -141,25 +169,39 @@ DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
 			
 			REMOVE_STRING(cBuf,'<li>',1)
 			cAck = REMOVE_STRING(cBuf,'<',1)
-			SET_LENGTH_STRING(cAck,LENGTH_STRING(cAck)-1)
+			SET_LENGTH_STRING(cAck,LENGTH_STRING(cAck)-6)
 			DebugString(4,"'Parsed Ack: ',cAck")
 			
 			SELECT {
 				ACTIVE (FIND_STRING(BBox.Comm.cLastGet,'GetVolume',1)) : {
+					//---The last command sent was a Volume query
 					DebugString(4,"'Volume: ',cAck")
+					
 					BBox.nVolumePct = ATOI(cAck)
+					
 					SEND_LEVEL vdvDev,1,BBox.nVolumePct
 					SEND_STRING vdvDev,"'VOLUME-',ITOA(BBox.nVolumePct)"
 				}
 				ACTIVE (FIND_STRING(BBox.Comm.cLastGet,'SetVolume',1)) : {
+					//---Last command sent was an absolute Volume request.
+					//---Now we need to query the new setting to make sure it was applied successfully
 					SEND_COMMAND vdvDev,"'?VOLUME'"
 				}
 				ACTIVE (FIND_STRING(BBox.Comm.cLastGet,'GetPercent',1)) : {
+					//---Progress Bar polling data
 					DebugString(4,"'Progress: ',cAck")
 					BBox.nProgressPct = ATOI(cAck)
 					SEND_LEVEL vdvDev,2,BBox.nProgressPct
 				}
+				
+				//---Add Now Playing parse routines here.
+				//---This will require modifying the first steps of parsing out the usable data.
+				//---Currenlty, the parse routine only accounts for a single line response from Boxee.
+				//---Now Playing is an indeterminate # of data sets
+				
+				//---OK is the general acknowledgement from the device for a request that requires no discrete ack.
 				ACTIVE (FIND_STRING(cAck,'OK',1)) : DebugString(4,"'OK: Last Tx: ',BBox.Comm.cLastGet")
+				
 				ACTIVE (FIND_STRING(cAck,'Error',1)) : DebugString(1,"'ERROR: Last Tx: ',BBox.Comm.cLastGet")
 			}
 		}
@@ -171,9 +213,13 @@ DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
 DEFINE_EVENT
 	DATA_EVENT [vdvDev] {
 		ONLINE : {
+			//---Default poll time
 			SEND_COMMAND vdvDev,"'PROPERTY-Poll_Time,60'"
 		}
 		COMMAND : {
+			//---Parse commands send to the virtual from Master code.
+			//---Que up the appropriate requests to the device
+			
 			STACK_VAR CHAR cCmd[16]
 			STACK_VAR INTEGER nPara
 			STACK_VAR CHAR cPara[8][128]
@@ -231,8 +277,13 @@ DEFINE_EVENT
 				ACTIVE (cCmd=='JUMP_TO_PCT') : AddHTTPGet("'xbmcCmds/xbmcHttp?command=SeekPercentage(',cPara[1],')'")
 				ACTIVE (cCmd=='SEEK_PCT') : AddHTTPGet("'xbmcCmds/xbmcHttp?command=SeekPercentageRelative(',cPara[1],')'")
 				
+				ACTIVE (cCmd=='?NOW_PLAYING') : AddHTTPGet("'xbmcCmds/xbmcHttp?command=getcurrentlyplaying'")
+				
 				(*********************************************************************)
 				
+				//---Commands below are module-specific, and don't necessarily have direct
+				//---requests to the device associated.  These are how the module is instantiated
+				//---and/or modified at runtime.
 				
 				ACTIVE (cCmd=='PASSTHRU_GET') : {
 					AddHTTPGet(cPara[1])
@@ -285,6 +336,7 @@ DEFINE_EVENT
 						OFF[BBox.Comm.nBusy]
 				}
 				
+				//---When all else fails, throw up an error flag!
 				ACTIVE (1) : DebugString(1,"'ERROR - Unhandled Command'")
 			}
 		}
@@ -311,16 +363,24 @@ DEFINE_EVENT
 			}
 		}
 		OFFLINE : {
+			LOCAL_VAR INTEGER nPointer
 			OFF[BBox.Comm.nBusy]
 			IF(LENGTH_STRING(BBox.Comm.cBuf)) {
-				DebugString(3,"'Sending to Parse : ',BBox.Comm.cBuf")
+				
+				//DebugString(3,"'Sending to Parse : ',BBox.Comm.cBuf")
+				nPointer = 1
+				WHILE(LENGTH_STRING(DATA.TEXT)>nPointer) {
+					DebugString(4,"'Send to Parse : ',MID_STRING(DATA.TEXT,nPointer,120)")
+					nPointer = nPointer+120
+				}
+				
 				DevRx(BBox.Comm.cBuf)
 				BBox.Comm.cBuf = ''
 			}
 		}
 		STRING : {
 			CANCEL_WAIT 'CommTimeout'
-			DebugString(4,"'Rx from BoxeeBox: ',DATA.TEXT")
+			//DebugString(4,"'Rx from BoxeeBox: ',DATA.TEXT")
 			IF(RIGHT_STRING(BBox.Comm.cBuf,7)=="$0D,$0A,'0',$0D,$0A,$0D,$0A")
 				IP_CLIENT_CLOSE(dvDev.PORT)
 		}
