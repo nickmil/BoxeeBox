@@ -38,7 +38,7 @@ Please refer to the Demo AMX workspace for guidance on implementation.
 | ?NOW_PLAYING | Future |
 
 | Instantiation & Debug SEND_COMMANDS |
-|-|
+|------|
 | DEBUG-* | * = Desired debug level (see code comments) |
 | PROPERTY-IP_Address,* | IP Address of the Boxee Box |
 | PROPERTY-TCP_Port,* | Boxee Box TCP comm port. (Default: 8800) |
@@ -49,7 +49,7 @@ Please refer to the Demo AMX workspace for guidance on implementation.
 | REINIT | Clears buffers and reinitializes the module |
 
 | UI Button Channels |
-|-|
+|------|
 | 1 | Play |
 | 2 | Stop |
 | 3 | Pause |
