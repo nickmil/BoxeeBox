@@ -7,7 +7,7 @@ With the release of Eden, XBMC has moved to a JSON API.
 This module is provided free of charge with no warranty or guarantee of functionality.
 Please refer to the Demo AMX workspace for guidance on implementation.
 
-| COMM Module SEND_COMMANDS        |
+| COMM Module SEND_COMMANDS  |      |
 |----------------------|
 | PLAY | Play/Pause current media |
 | PAUSE | Same as Play Above |
@@ -37,7 +37,7 @@ Please refer to the Demo AMX workspace for guidance on implementation.
 | SEEK_PCT-* | * = Relative jump in current media (percentage) |
 | ?NOW_PLAYING | Future |
 
-| Instantiation & Debug SEND_COMMANDS |
+| Instantiation & Debug SEND_COMMANDS |   |
 |------|
 | DEBUG-* | * = Desired debug level (see code comments) |
 | PROPERTY-IP_Address,* | IP Address of the Boxee Box |
@@ -48,7 +48,7 @@ Please refer to the Demo AMX workspace for guidance on implementation.
 | CLEARBUF | Clears buffer of acks returned from Boxee |
 | REINIT | Clears buffers and reinitializes the module |
 
-| UI Button Channels |
+| UI Button Channels |   |
 |------|
 | 1 | Play |
 | 2 | Stop |
