@@ -51,17 +51,17 @@ DEFINE_EVENT		//---Transports
 	BUTTON_EVENT [dvTP,3] {		//---Pause
 		PUSH : SEND_COMMAND vdvDev,"'PAUSE'"
 	}
-	BUTTON_EVENT [dvTP,4] {		//---Next
+	BUTTON_EVENT [dvTP,5] {		//---Next
 		PUSH : SEND_COMMAND vdvDev,"'NEXT'"
 	}
-	BUTTON_EVENT [dvTP,5] {		//---Previous
+	BUTTON_EVENT [dvTP,6] {		//---Previous
 		PUSH : SEND_COMMAND vdvDev,"'PREVIOUS'"
 	}
-	BUTTON_EVENT [dvTP,6] {		//---Seek Fwd
+	BUTTON_EVENT [dvTP,7] {		//---Seek Fwd
 		PUSH : SEND_COMMAND vdvDev,"'SEEK_PCT-1'"
 		HOLD[3,REPEAT] : SEND_COMMAND vdvDev,"'SEEK_PCT-1'"
 	}
-	BUTTON_EVENT [dvTP,7] {		//---Seek Rev
+	BUTTON_EVENT [dvTP,8	] {		//---Seek Rev
 		PUSH : SEND_COMMAND vdvDev,"'SEEK_PCT--1'"
 		HOLD[3,REPEAT] : SEND_COMMAND vdvDev,"'SEEK_PCT--1'"
 	}
