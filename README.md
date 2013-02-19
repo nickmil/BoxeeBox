@@ -7,8 +7,8 @@ With the release of Eden, XBMC has moved to a JSON API.
 This module is provided free of charge with no warranty or guarantee of functionality.
 Please refer to the Demo AMX workspace for guidance on implementation.
 
-| COMM Module SEND_COMMANDS                                              |
-|------------------------------------------------------------------------|
+| SEND_COMMANDS   |                                                      |
+|-----------------|------------------------------------------------------|
 | PLAY            | Play/Pause current media                             |
 | PAUSE           | Same as Play Above                                   |
 | PLAYPAUSE       | Same as PLAY & PAUSE                                 |
