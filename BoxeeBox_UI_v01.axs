@@ -1,6 +1,30 @@
 MODULE_NAME='BoxeeBox_UI_v01' (DEV vdvDev,DEV dvTP)
 
+DEFINE_TYPE
+	STRUCTURE _NowPlaying {
+		INTEGER nMediaType
+		
+		CHAR cTimePassed[16]
+		CHAR cTimeDuration[16]
+		
+		CHAR cShowSeason[4]
+		CHAR cShowEpisode[4]
+		
+		CHAR cLinesOfText[6][32]
+	}
+	STRUCTURE _BBoxUI {
+		_NowPlaying WasPlaying
+		_NowPlaying NowPlaying
+	}
+
+
+DEFINE_CONSTANT
+	AUDIO = 1
+	VIDEO = 2
+
+
 DEFINE_VARIABLE
+	VOLATILE _BBoxUI BBoxUI
 	VOLATILE CHAR cKeys[2][47][2] = {
 		{ {'1'},{'2'},{'3'},{'4'},{'5'},{'6'},{'7'},{'8'},{'9'},{'0'},{'-'},{'='},
 			{'q'},{'w'},{'e'},{'r'},{'t'},{'y'},{'u'},{'i'},{'o'},{'p'},{'['},{']'},
@@ -26,16 +50,20 @@ DEFINE_VARIABLE
 DEFINE_FUNCTION ClearNowPlaying() {
 	LOCAL_VAR INTEGER i
 	FOR(i=11;i<=16;i++) {
+		BBoxUI.NowPlaying.cLinesOfText[i-10] = ''
 		SEND_COMMAND dvTP,"'^TXT-',ITOA(i),',0, '"
 	}
 }
-DEFINE_FUNCTION UpdateNowPlaying(CHAR cStrings[6][]) {
-	LOCAL_VAR INTEGER i
+
+
+DEFINE_FUNCTION UpdateNowPlaying(_NowPlaying Playing) {
+	STACK_VAR INTEGER i
+	
 	FOR(i=1;i<=6;i++) {
-		IF(LENGTH_STRING(cStrings[i]>0))
-			SEND_COMMAND dvTP,"'^TXT-',ITOA(i+10),',0,',cStrings[i]"
-		ELSE
-			SEND_COMMAND dvTP,"'^TXT-',ITOA(i),',0, '"
+		IF(BBoxUI.NowPlaying.cLinesOfText[i]!=BBoxUI.WasPlaying.cLinesOfText[i]) {
+			SEND_COMMAND dvTP,"'^TXT-1',ITOA(i),',0,',BBoxUI.NowPlaying.cLinesOfText[i]"
+			BBoxUI.WasPlaying.cLinesOfText[i] = BBoxUI.NowPlaying.cLinesOfText[i]
+		}
 	}
 }
 
@@ -194,7 +222,56 @@ DEFINE_EVENT
 			SEND_COMMAND vdvDev,"'?VOLUME'"
 		}
 	}
+	
+DEFINE_EVENT
+	DATA_EVENT [vdvDev] {
+		STRING : {
+			STACK_VAR CHAR cCmd[16]
+			STACK_VAR INTEGER nPara
+			STACK_VAR CHAR cPara[8][128]
+			
+			IF(FIND_STRING(DATA.TEXT,'-',1)) {
+				cCmd = REMOVE_STRING(DATA.TEXT,'-',1)
+				SET_LENGTH_STRING(cCmd,LENGTH_STRING(cCmd)-1)
+				
+				nPara=1
+				WHILE(FIND_STRING(DATA.TEXT,',',1)) {
+					cPara[nPara] = REMOVE_STRING(DATA.TEXT,',',1)
+					SET_LENGTH_STRING(cPara[nPara],LENGTH_STRING(cPara[nPara])-1)
+					nPara++
+				}
+				cPara[nPara] = DATA.TEXT
+			}
+			ELSE {
+				cCmd = DATA.TEXT
+			}
+			
+			SELECT {
+				ACTIVE ((cCmd=='NOW_PLAYING') && (cPara[1]=='Type') && (cPara[2]=='Audio')) : BBoxUI.NowPlaying.nMediaType = AUDIO
+				ACTIVE ((cCmd=='NOW_PLAYING') && (cPara[1]=='Type') && (cPara[2]=='Video')) : BBoxUI.NowPlaying.nMediaType = VIDEO
+				
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Title')) : BBoxUI.NowPlaying.cLinesOfText[1] = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Artist')) : BBoxUI.NowPlaying.cLinesOfText[2] = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Album')) : BBoxUI.NowPlaying.cLinesOfText[3] = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Time')) : BBoxUI.NowPlaying.cTimePassed = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Duration')) : BBoxUI.NowPlaying.cTimeDuration = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Percentage')) : BBoxUI.NowPlaying.cLinesOfText[4] = "BBoxUI.NowPlaying.cTimePassed,' / ',BBoxUI.NowPlaying.cTimeDuration,' / ',cPara[2],'%'"
+				
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Show Title')) : BBoxUI.NowPlaying.cLinesOfText[1] = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Title')) : BBoxUI.NowPlaying.cLinesOfText[2] = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Season')) : BBoxUI.NowPlaying.cShowSeason = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Episode')) : BBoxUI.NowPlaying.cLinesOfText[3] = "'Season ',BBoxUI.NowPlaying.cShowSeason,', Episode ',cPara[2]"
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Time')) : BBoxUI.NowPlaying.cTimePassed = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Duration')) : BBoxUI.NowPlaying.cTimeDuration = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Percentage')) : BBoxUI.NowPlaying.cLinesOfText[4] = "BBoxUI.NowPlaying.cTimePassed,' / ',BBoxUI.NowPlaying.cTimeDuration,' / ',cPara[2],'%'"
+				
+				ACTIVE (1) : {}
+			}
+			UpdateNowPlaying(BBoxUI.NowPlaying)
+		}
+	}
 
 //-----------------------------------------------------------------------------
 
 DEFINE_PROGRAM
+	[dvTP,1] = [vdvDev,1]

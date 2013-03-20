@@ -1,0 +1,19 @@
+xbmcCmds/xbmcHttp?command=getcurrentlyplaying
+
+<html>
+<li>Filename:http://t1-2.p-cdn.com/access/?version=4&lid=104255531&token=VkE1a6NsvEODlm%2BMWrYj1AIiGQaqEE4k0RXAyg8lFHm%2FYeteKyThyzIQLt8uSvll%2BC2YCw6RhJhV97AZco2gY423%2BIfjm%2BX4Yuuj82XXW5PilVRhYd3N%2FhUlrhldNF9oNTt6NZjQ4Qnz1MXp3R4xU6xnZ9ufNiDUwXrTRGOaENlfZA7ECBhr93DPc0nVodn7oZZS9eWAFH5rcCliQ3CDjlxoPbENLgmMpZaVDBnd06984ZxVeYACtV6W9d5AVkDWNQVbu%2B7fBd1N%2Bwuuje8pZFTXXVuzDc4gTTT9fgWTvHYOMeay3jglcXu6MeY4avRoCSQBOWw7rTl2lmIX0Bn9wfcHaKlHXQ5X
+<li>PlayStatus:Playing
+<li>SongNo:0
+<li>Type:Audio
+<li>Title:Gold On The Ceiling
+<li>Artist:The Black Keys
+<li>Album:El Camino
+<li>URL:
+<li>Lyrics:
+<li>Bitrate:128
+<li>Samplerate:44
+<li>Thumb:special://masterprofile/profiles/nickmil/Thumbnails/Pictures/a/add2ed23.tbn
+<li>Time:00:23
+<li>Duration:03:44
+<li>Percentage:10
+<li>Changed:True</html>

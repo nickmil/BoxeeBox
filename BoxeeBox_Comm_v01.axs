@@ -22,7 +22,9 @@ DEFINE_TYPE
 		
 		INTEGER nVolumePct			//---Current Volume setting (0-100%)
 		INTEGER nProgressPct		//---Current Playback Progress (0-100%)
-		INTEGER nProgressPoll	//---Should we poll (each second) for progress (!!! High Network Traffic !!!)
+		INTEGER nProgressPoll		//---Should we poll (each second) for progress (!!! High Network Traffic !!!)
+		
+		INTEGER nPlaying
 	}
 	
 	
@@ -116,14 +118,14 @@ DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
 	//---Received a string from the device,
 	//---Now lets do something intelligent with it.
 
-	LOCAL_VAR CHAR cHTTPResponseCode[8]
-	LOCAL_VAR LONG nHTMLStart
-	LOCAL_VAR LONG nHTMLEnd
-	LOCAL_VAR CHAR cHTML[2048]
-	LOCAL_VAR CHAR cAck[2048]
-	LOCAL_VAR CHAR cTempPara[32][2][32]
-	LOCAL_VAR INTEGER nTempPara
-	LOCAL_VAR INTEGER nPointer
+	STACK_VAR CHAR cHTTPResponseCode[8]
+	STACK_VAR LONG nHTMLStart
+	STACK_VAR LONG nHTMLEnd
+	STACK_VAR CHAR cHTML[2048]
+	STACK_VAR CHAR cAck[2048]
+	STACK_VAR CHAR cTempPara[2][32]
+	STACK_VAR INTEGER nTempPara
+	STACK_VAR INTEGER nPointer
 	
 	//DebugString(4,"'Parsing : ',cBuf")
 	
@@ -141,6 +143,7 @@ DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
 	
 	REMOVE_STRING(cBuf,"'HTTP/1.0 '",1)
 	cHTTPResponseCode = REMOVE_STRING(cBuf,"$0D,$0A",1)
+	
 	SELECT {
 		//---HTTP Error Codes from Device
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'401',1)) : DebugString(1,'ERROR - HTTP Response Code: 401, Unauthorized')
@@ -167,42 +170,72 @@ DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
 			cHTML = MID_STRING(cBuf,nHTMLStart,(nHTMLEnd-nHTMLStart))
 			DebugString(4,"'HTML Content - ',cHTML")
 			
-			REMOVE_STRING(cBuf,'<li>',1)
-			cAck = REMOVE_STRING(cBuf,'<',1)
-			SET_LENGTH_STRING(cAck,LENGTH_STRING(cAck)-6)
-			DebugString(4,"'Parsed Ack: ',cAck")
 			
-			SELECT {
-				ACTIVE (FIND_STRING(BBox.Comm.cLastGet,'GetVolume',1)) : {
-					//---The last command sent was a Volume query
-					DebugString(4,"'Volume: ',cAck")
+			WHILE(FIND_STRING(cBuf,'<li>',1)) {
+				REMOVE_STRING(cBuf,'<li>',1)
+				
+				IF(FIND_STRING(cBuf,"$0A",1))
+					cAck = REMOVE_STRING(cBuf,"$0A",1)
+				ELSE
+					cAck = cBuf
 					
-					BBox.nVolumePct = ATOI(cAck)
+				SET_LENGTH_STRING(cAck,LENGTH_STRING(cAck)-1)
+				DebugString(4,"'Parsed Ack: ',cAck")
+				
+				SELECT {
+					ACTIVE (FIND_STRING(BBox.Comm.cLastGet,'getcurrentlyplaying',1)) : {
+						cTempPara[1] = REMOVE_STRING(cAck,':',1)
+						SET_LENGTH_STRING(cTempPara[1],LENGTH_STRING(cTempPara[1])-1)
+						cTempPara[2] = cAck
+						
+						SELECT {
+							ACTIVE ((cTempPara[1]=='PlayStatus') && (cTempPara[2]=='Playing')) : {}//ON[BBox.nPlaying]
+							ACTIVE (cTempPara[1]=='PlayStatus') : {}//OFF[BBox.nPlaying]
+							
+							ACTIVE (cTempPara[1]=='Type')				: SEND_STRING vdvDev,"'NOW_PLAYING-Type,',cTempPara[2]"
+							ACTIVE (cTempPara[1]=='Title')			: SEND_STRING vdvDev,"'NOW_PLAYING-Title,',cTempPara[2]"
+							ACTIVE (cTempPara[1]=='Artist')			:	SEND_STRING vdvDev,"'NOW_PLAYING-Artist,',cTempPara[2]"
+							ACTIVE (cTempPara[1]=='Album')			:	SEND_STRING vdvDev,"'NOW_PLAYING-Album,',cTempPara[2]"
+							ACTIVE (cTempPara[1]=='Time')				: SEND_STRING vdvDev,"'NOW_PLAYING-Time,',cTempPara[2]"
+							ACTIVE (cTempPara[1]=='Duration')		:	SEND_STRING vdvDev,"'NOW_PLAYING-Duration,',cTempPara[2]"
+							ACTIVE (cTempPara[1]=='Show Title') : SEND_STRING vdvDev,"'NOW_PLAYING-Show Title,',cTempPara[2]"
+							ACTIVE (cTempPara[1]=='Season')			: SEND_STRING vdvDev,"'NOW_PLAYING-Season,',cTempPara[2]"
+							ACTIVE (cTempPara[1]=='Episode') 		: SEND_STRING vdvDev,"'NOW_PLAYING-Episode,',cTempPara[2]"
+							ACTIVE (cTempPara[1]=='Percentage')	: {
+								SEND_STRING vdvDev,"'NOW_PLAYING-Percentage,',cTempPara[2]"
+								SEND_LEVEL vdvDev,2,ATOI(cTempPara[2])
+							}
+						}
+					}
 					
-					SEND_LEVEL vdvDev,1,BBox.nVolumePct
-					SEND_STRING vdvDev,"'VOLUME-',ITOA(BBox.nVolumePct)"
+					ACTIVE (FIND_STRING(BBox.Comm.cLastGet,'GetVolume',1)) : {
+						//---The last command sent was a Volume query
+						DebugString(4,"'Volume: ',cAck")
+						
+						BBox.nVolumePct = ATOI(cAck)
+						
+						SEND_LEVEL vdvDev,1,BBox.nVolumePct
+						SEND_STRING vdvDev,"'VOLUME-',ITOA(BBox.nVolumePct)"
+					}
+					ACTIVE (FIND_STRING(BBox.Comm.cLastGet,'SetVolume',1)) : {
+						//---Last command sent was an absolute Volume request.
+						//---Now we need to query the new setting to make sure it was applied successfully
+						SEND_COMMAND vdvDev,"'?VOLUME'"
+					}
+					ACTIVE (FIND_STRING(BBox.Comm.cLastGet,'GetPercent',1)) : {
+						//---Progress Bar polling data
+						DebugString(4,"'Progress: ',cAck")
+						BBox.nProgressPct = ATOI(cAck)
+						SEND_LEVEL vdvDev,2,BBox.nProgressPct
+					}
+					
+					//---OK is the general acknowledgement from the device for a request that requires no discrete ack.
+					ACTIVE (FIND_STRING(cAck,'OK',1)) : DebugString(4,"'OK: Last Tx: ',BBox.Comm.cLastGet")
+					
+					ACTIVE (FIND_STRING(cAck,'Error',1)) : DebugString(1,"'ERROR: Last Tx: ',BBox.Comm.cLastGet")
+					
+					ACTIVE (1) : DebugString(3 ,"'ERROR - DevRx - Unhandled Ack: ',cAck")
 				}
-				ACTIVE (FIND_STRING(BBox.Comm.cLastGet,'SetVolume',1)) : {
-					//---Last command sent was an absolute Volume request.
-					//---Now we need to query the new setting to make sure it was applied successfully
-					SEND_COMMAND vdvDev,"'?VOLUME'"
-				}
-				ACTIVE (FIND_STRING(BBox.Comm.cLastGet,'GetPercent',1)) : {
-					//---Progress Bar polling data
-					DebugString(4,"'Progress: ',cAck")
-					BBox.nProgressPct = ATOI(cAck)
-					SEND_LEVEL vdvDev,2,BBox.nProgressPct
-				}
-				
-				//---Add Now Playing parse routines here.
-				//---This will require modifying the first steps of parsing out the usable data.
-				//---Currenlty, the parse routine only accounts for a single line response from Boxee.
-				//---Now Playing is an indeterminate # of data sets
-				
-				//---OK is the general acknowledgement from the device for a request that requires no discrete ack.
-				ACTIVE (FIND_STRING(cAck,'OK',1)) : DebugString(4,"'OK: Last Tx: ',BBox.Comm.cLastGet")
-				
-				ACTIVE (FIND_STRING(cAck,'Error',1)) : DebugString(1,"'ERROR: Last Tx: ',BBox.Comm.cLastGet")
 			}
 		}
 	}
@@ -264,7 +297,7 @@ DEFINE_EVENT
 				ACTIVE ((cCmd=='KEYBOARD') && (cPara[1]=='DELETE')) : AddHTTPGet('xbmcCmds/xbmcHttp?command=SendKey(61704)')
 				ACTIVE ((cCmd=='KEYBOARD') && (cPara[1]=='SPACE')) : AddHTTPGet('xbmcCmds/xbmcHttp?command=SendKey(61728)')
 				ACTIVE (cCmd=='KEYBOARD') : {
-					AddHTTPGet("'xbmcCmds/xbmcHttp?command=SendKey(',ITOA(61696 +GET_BUFFER_CHAR(cPara[1])),')'")
+					AddHTTPGet("'xbmcCmds/xbmcHttp?command=SendKey(',ITOA(61696+GET_BUFFER_CHAR(cPara[1])),')'")
 				}
 				
 				ACTIVE (cCmd=='?VOLUME') : AddHTTPGet("'xbmcCmds/xbmcHttp?command=GetVolume'")
@@ -357,7 +390,8 @@ DEFINE_EVENT
 			WAIT BBox.Comm.nCommTimeout 'CommTimeout' {
 				BBox.Comm.cBuf = ''
 				BBox.Comm.cQue = ''
-				BBox.Comm.nBusy = 0
+				IP_CLIENT_CLOSE(dvDev.Port)
+				OFF[BBox.Comm.nBusy]
 				SEND_STRING vdvDev,"'ERROR-Comm Timeout'"
 				DebugString(1,"'ERROR-Comm Timed Out'")
 			}
@@ -388,6 +422,76 @@ DEFINE_EVENT
 	
 	
 DEFINE_EVENT
+	CHANNEL_EVENT [vdvDev,1] {
+		ON : SEND_COMMAND vdvDev,"'PLAY'"
+	}
+	CHANNEL_EVENT [vdvDev,2] {
+		ON : SEND_COMMAND vdvDev,"'STOP'"
+	}
+	CHANNEL_EVENT [vdvDev,3] {
+		ON : SEND_COMMAND vdvDev,"'PAUSE'"
+	}
+	CHANNEL_EVENT [vdvDev,4] {
+		ON : SEND_COMMAND vdvDev,"'SEEK_PCT-1'"
+	}
+	CHANNEL_EVENT [vdvDev,5] {
+		ON : SEND_COMMAND vdvDev,"'SEEK_PCT--1'"
+	}
+	CHANNEL_EVENT [vdvDev,6] {
+		ON : SEND_COMMAND vdvDev,"'NEXT'"
+	}
+	CHANNEL_EVENT [vdvDev,7] {
+		ON : SEND_COMMAND vdvDev,"'PREVIOUS'"
+	}
+	
+	CHANNEL_EVENT [vdvDev,10]
+	CHANNEL_EVENT [vdvDev,11]
+	CHANNEL_EVENT [vdvDev,12]
+	CHANNEL_EVENT [vdvDev,13]
+	CHANNEL_EVENT [vdvDev,14]
+	CHANNEL_EVENT [vdvDev,15]
+	CHANNEL_EVENT [vdvDev,16]
+	CHANNEL_EVENT [vdvDev,17]
+	CHANNEL_EVENT [vdvDev,18]
+	CHANNEL_EVENT [vdvDev,19] {
+		ON : SEND_COMMAND vdvDev,"'KEYBOARD-',ITOA(CHANNEL.CHANNEL-10)"
+	}
+	
+	CHANNEL_EVENT [vdvDev,24] {
+		ON : SEND_COMMAND vdvDev,"'VOLUME-UP'"
+	}
+	CHANNEL_EVENT [vdvDev,25] {
+		ON : SEND_COMMAND vdvDev,"'VOLUME-DOWN'"
+	}
+	CHANNEL_EVENT [vdvDev,26] {
+		ON : SEND_COMMAND vdvDev,"'MUTE'"
+	}
+	
+	CHANNEL_EVENT [vdvDev,44] {
+		ON : SEND_COMMAND vdvDev,"'MENU'"
+	}
+	CHANNEL_EVENT [vdvDev,45] {
+		ON : SEND_COMMAND vdvDev,"'MENU-UP'"
+	}
+	CHANNEL_EVENT [vdvDev,46] {
+		ON : SEND_COMMAND vdvDev,"'MENU-DOWN'"
+	}
+	CHANNEL_EVENT [vdvDev,47] {
+		ON : SEND_COMMAND vdvDev,"'MENU-LEFT'"
+	}
+	CHANNEL_EVENT [vdvDev,48] {
+		ON : SEND_COMMAND vdvDev,"'MENU-RIGHT'"
+	}
+	CHANNEL_EVENT [vdvDev,49] {
+		ON : SEND_COMMAND vdvDev,"'MENU-OK'"
+	}
+	CHANNEL_EVENT [vdvDev,50] {
+		ON : SEND_COMMAND vdvDev,"'MENU-EXIT'"
+	}
+	
+	
+	
+DEFINE_EVENT
 	TIMELINE_EVENT [tlPolling] {
 		IF(TIMELINE.SEQUENCE<=MaxPollCmds)
 			SEND_COMMAND vdvDev,"cPollCmds[TIMELINE.SEQUENCE]"
@@ -405,9 +509,11 @@ DEFINE_START
 //-----------------------------------------------------------------------------
 
 DEFINE_PROGRAM
+	[vdvDev,1] = BBox.nPlaying
+	
 	[vdvDev,254] = BBox.Comm.nBusy
 	SendQue()
 	
 	WAIT 10
 		IF(BBox.nProgressPoll)
-			SEND_COMMAND vdvDev,"'?PROGRESS'"
+			SEND_COMMAND vdvDev,"'?NOW_PLAYING'"
