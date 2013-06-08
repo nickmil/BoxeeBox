@@ -10,7 +10,7 @@ DEFINE_TYPE
 		INTEGER nCommTimeout		//---How long before we give up on a response?
 		
 		CHAR cQue[2048]					//---Que of strings waiting to be sent to device
-		CHAR cBuf[2048]					//---Buffer of Acks returned from device
+		CHAR cBuf[4096]					//---Buffer of Acks returned from device
 		CHAR cLastGet[512]			//---What was the last request I sent to the device?
 		INTEGER nBusy					//---Waiting for a response back from the device
 		
@@ -123,7 +123,7 @@ DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
 	STACK_VAR LONG nHTMLEnd
 	STACK_VAR CHAR cHTML[2048]
 	STACK_VAR CHAR cAck[2048]
-	STACK_VAR CHAR cTempPara[2][32]
+	STACK_VAR CHAR cTempPara[2][128]
 	STACK_VAR INTEGER nTempPara
 	STACK_VAR INTEGER nPointer
 	
@@ -155,7 +155,7 @@ DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'407',1)) : DebugString(1,'ERROR - HTTP Response Code: 407, Proxy Auth Required')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'408',1)) : DebugString(1,'ERROR - HTTP Response Code: 408, Request Timeout')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'409',1)) : DebugString(1,'ERROR - HTTP Response Code: 409, Conflict')
-		ACTIVE (FIND_STRING(cHTTPResponseCode,'410',1)) : DebugString(1,'ERROR - HTTP Response Code: 410, Gone')
+		ACTIVE (FIND_STRING(cHTTPResponseCode,'410' ,1)) : DebugString(1,'ERROR - HTTP Response Code: 410, Gone')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'411',1)) : DebugString(1,'ERROR - HTTP Response Code: 411, Length Required')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'412',1)) : DebugString(1,'ERROR - HTTP Response Code: 412, Precondition Failed')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'413',1)) : DebugString(1,'ERROR - HTTP Response Code: 413, Request Entity Too Large')
@@ -189,8 +189,9 @@ DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
 						cTempPara[2] = cAck
 						
 						SELECT {
+							ACTIVE ((cTempPara[1]=='Filename') && (FIND_STRING(cTempPara[2],'[Nothing Playing]',1))) : SEND_STRING vdvDev,"'NOW_PLAYING-Nothing'"
 							ACTIVE ((cTempPara[1]=='PlayStatus') && (cTempPara[2]=='Playing')) : {}//ON[BBox.nPlaying]
-							ACTIVE (cTempPara[1]=='PlayStatus') : {}//OFF[BBox.nPlaying]
+							ACTIVE ((cTempPara[1]=='PlayStatus') && (cTempPara[2]=='Paused')) : {}//OFF[BBox.nPlaying]
 							
 							ACTIVE (cTempPara[1]=='Type')				: SEND_STRING vdvDev,"'NOW_PLAYING-Type,',cTempPara[2]"
 							ACTIVE (cTempPara[1]=='Title')			: SEND_STRING vdvDev,"'NOW_PLAYING-Title,',cTempPara[2]"
@@ -247,7 +248,7 @@ DEFINE_EVENT
 	DATA_EVENT [vdvDev] {
 		ONLINE : {
 			//---Default poll time
-			SEND_COMMAND vdvDev,"'PROPERTY-Poll_Time,60'"
+			SEND_COMMAND vdvDev,"'PROPERTY- Time,60'"
 		}
 		COMMAND : {
 			//---Parse commands send to the virtual from Master code.

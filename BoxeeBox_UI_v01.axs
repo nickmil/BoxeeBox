@@ -10,7 +10,7 @@ DEFINE_TYPE
 		CHAR cShowSeason[4]
 		CHAR cShowEpisode[4]
 		
-		CHAR cLinesOfText[6][32]
+		CHAR cLinesOfText[6][128]
 	}
 	STRUCTURE _BBoxUI {
 		_NowPlaying WasPlaying
@@ -53,6 +53,7 @@ DEFINE_FUNCTION ClearNowPlaying() {
 		BBoxUI.NowPlaying.cLinesOfText[i-10] = ''
 		SEND_COMMAND dvTP,"'^TXT-',ITOA(i),',0, '"
 	}
+	SEND_LEVEL dvTP,2,0
 }
 
 
@@ -247,23 +248,24 @@ DEFINE_EVENT
 			}
 			
 			SELECT {
+				ACTIVE ((cCmd=='NOW_PLAYING') && (cPara[1]=='Nothing')) : ClearNowPlaying()
 				ACTIVE ((cCmd=='NOW_PLAYING') && (cPara[1]=='Type') && (cPara[2]=='Audio')) : BBoxUI.NowPlaying.nMediaType = AUDIO
 				ACTIVE ((cCmd=='NOW_PLAYING') && (cPara[1]=='Type') && (cPara[2]=='Video')) : BBoxUI.NowPlaying.nMediaType = VIDEO
 				
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Title')) : BBoxUI.NowPlaying.cLinesOfText[1] = cPara[2]
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Artist')) : BBoxUI.NowPlaying.cLinesOfText[2] = cPara[2]
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Album')) : BBoxUI.NowPlaying.cLinesOfText[3] = cPara[2]
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Time')) : BBoxUI.NowPlaying.cTimePassed = cPara[2]
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Duration')) : BBoxUI.NowPlaying.cTimeDuration = cPara[2]
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Percentage')) : BBoxUI.NowPlaying.cLinesOfText[4] = "BBoxUI.NowPlaying.cTimePassed,' / ',BBoxUI.NowPlaying.cTimeDuration,' / ',cPara[2],'%'"
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Title'))				: BBoxUI.NowPlaying.cLinesOfText[1] = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Artist'))			: BBoxUI.NowPlaying.cLinesOfText[2] = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Album'))				: BBoxUI.NowPlaying.cLinesOfText[3] = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Time'))				: BBoxUI.NowPlaying.cTimePassed = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Duration'))		: BBoxUI.NowPlaying.cTimeDuration = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==AUDIO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Percentage'))	: BBoxUI.NowPlaying.cLinesOfText[4] = "BBoxUI.NowPlaying.cTimePassed,' / ',BBoxUI.NowPlaying.cTimeDuration,' / ',cPara[2],'%'"
 				
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Show Title')) : BBoxUI.NowPlaying.cLinesOfText[1] = cPara[2]
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Title')) : BBoxUI.NowPlaying.cLinesOfText[2] = cPara[2]
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Season')) : BBoxUI.NowPlaying.cShowSeason = cPara[2]
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Episode')) : BBoxUI.NowPlaying.cLinesOfText[3] = "'Season ',BBoxUI.NowPlaying.cShowSeason,', Episode ',cPara[2]"
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Time')) : BBoxUI.NowPlaying.cTimePassed = cPara[2]
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Duration')) : BBoxUI.NowPlaying.cTimeDuration = cPara[2]
-				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Percentage')) : BBoxUI.NowPlaying.cLinesOfText[4] = "BBoxUI.NowPlaying.cTimePassed,' / ',BBoxUI.NowPlaying.cTimeDuration,' / ',cPara[2],'%'"
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Show Title'))	: BBoxUI.NowPlaying.cLinesOfText[1] = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Title'))				: BBoxUI.NowPlaying.cLinesOfText[2] = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Season'))			: BBoxUI.NowPlaying.cShowSeason = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Episode'))			: BBoxUI.NowPlaying.cLinesOfText[3] = "'Season ',BBoxUI.NowPlaying.cShowSeason,', Episode ',cPara[2]"
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Time'))				: BBoxUI.NowPlaying.cTimePassed = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Duration'))		: BBoxUI.NowPlaying.cTimeDuration = cPara[2]
+				ACTIVE ((BBoxUI.NowPlaying.nMediaType==VIDEO) && (cCmd=='NOW_PLAYING') && (cPara[1]=='Percentage'))	: BBoxUI.NowPlaying.cLinesOfText[4] = "BBoxUI.NowPlaying.cTimePassed,' / ',BBoxUI.NowPlaying.cTimeDuration,' / ',cPara[2],'%'"
 				
 				ACTIVE (1) : {}
 			}
