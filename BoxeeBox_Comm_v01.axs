@@ -1,4 +1,5 @@
 MODULE_NAME='BoxeeBox_Comm_v01' (DEV vdvDev,DEV dvDev)
+#INCLUDE 'SNAPI'
 
 DEFINE_TYPE
 	STRUCTURE _Debug {
@@ -155,7 +156,7 @@ DEFINE_FUNCTION DevRx(CHAR cBuf[]) {
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'407',1)) : DebugString(1,'ERROR - HTTP Response Code: 407, Proxy Auth Required')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'408',1)) : DebugString(1,'ERROR - HTTP Response Code: 408, Request Timeout')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'409',1)) : DebugString(1,'ERROR - HTTP Response Code: 409, Conflict')
-		ACTIVE (FIND_STRING(cHTTPResponseCode,'410' ,1)) : DebugString(1,'ERROR - HTTP Response Code: 410, Gone')
+		ACTIVE (FIND_STRING(cHTTPResponseCode,'410',1)) : DebugString(1,'ERROR - HTTP Response Code: 410, Gone')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'411',1)) : DebugString(1,'ERROR - HTTP Response Code: 411, Length Required')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'412',1)) : DebugString(1,'ERROR - HTTP Response Code: 412, Precondition Failed')
 		ACTIVE (FIND_STRING(cHTTPResponseCode,'413',1)) : DebugString(1,'ERROR - HTTP Response Code: 413, Request Entity Too Large')
@@ -248,7 +249,7 @@ DEFINE_EVENT
 	DATA_EVENT [vdvDev] {
 		ONLINE : {
 			//---Default poll time
-			SEND_COMMAND vdvDev,"'PROPERTY- Time,60'"
+			SEND_COMMAND vdvDev,"'PROPERTY-Poll_Time,60'"
 		}
 		COMMAND : {
 			//---Parse commands send to the virtual from Master code.
@@ -258,6 +259,16 @@ DEFINE_EVENT
 			STACK_VAR INTEGER nPara
 			STACK_VAR CHAR cPara[8][128]
 			
+			cCmd = DuetParseCmdHeader(DATA.TEXT)
+			
+			nPara = 1
+			WHILE(FIND_STRING(DATA.TEXT,',',1)) {
+				cPara[nPara] = DuetParseCmdParam(DATA.TEXT)
+				nPara++
+			}
+			cPara[nPara] = DuetParseCmdParam(DATA.TEXT)
+			
+			(*
 			IF(FIND_STRING(DATA.TEXT,'-',1)) {
 				cCmd = REMOVE_STRING(DATA.TEXT,'-',1)
 				SET_LENGTH_STRING(cCmd,LENGTH_STRING(cCmd)-1)
@@ -273,6 +284,7 @@ DEFINE_EVENT
 			ELSE {
 				cCmd = DATA.TEXT
 			}
+			*)
 			
 			SELECT {
 				
