@@ -44,10 +44,10 @@ DEFINE_VARIABLE
 DEFINE_FUNCTION DebugString(INTEGER nLevel,CHAR cString[]) {
 	STACK_VAR CHAR cLevel[16]
 	//---Sends the appropriate debug strings to the console.
-	//---1-ERRORS Only
-	//---2-Asynchronous Strings from Device
-	//---3-Acks to code driven actions
-	//---4-All Data & parsing)
+	//---1-ERROR
+	//---2-WARNING
+	//---3-INFO
+	//---4-DEBUG
 	
 	IF(nLevel<=BBox.Debug.nDebugLevel) {
 		SWITCH (nLevel) {
