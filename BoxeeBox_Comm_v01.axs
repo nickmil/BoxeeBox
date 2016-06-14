@@ -68,7 +68,7 @@ DEFINE_FUNCTION SendQue() {
 	LOCAL_VAR CHAR cCmd[64]
 	IF(!BBox.Comm.nBusy && FIND_STRING(BBox.Comm.cQue,"$0B,$0B",1)) {
 		ON[BBox.Comm.nBusy]
-		CALL 'OpenSocket'
+		OpenSocket()
 	}
 }
 DEFINE_FUNCTION AddHTTPGet(CHAR cShortURI[]) {
@@ -92,7 +92,7 @@ DEFINE_FUNCTION AddHTTPGet(CHAR cShortURI[]) {
 	BBox.Comm.cQue = "BBox.Comm.cQue,cHeader,$0B,$0B"
 	DebugString(3,"'AddHTTPGet : ',cShortURI")
 }
-DEFINE_CALL 'OpenSocket' {
+DEFINE_FUNCTION OpenSocket() {
 	//---Opens a client socket and waits for the device to come online
 	//---Errors listed are those reported by AMX socket handler
 
