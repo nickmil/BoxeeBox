@@ -4,6 +4,7 @@ MODULE_NAME='BoxeeBox_Comm_v01' (DEV vdvDev,DEV dvDev)
 DEFINE_TYPE
 	STRUCTURE _Debug {
 		INTEGER nDebugLevel		//---Current level of debug strings sent to console (See DebugString subroutine below)
+		CHAR cDPS[15]
 	}
 	STRUCTURE _Comm {
 		CHAR cIPAddress[15]			//---IP Address of the Boxee Box (? Increase byte count to allow for hostnames ?)
@@ -41,6 +42,7 @@ DEFINE_VARIABLE
 //-----------------------------------------------------------------------------
 
 DEFINE_FUNCTION DebugString(INTEGER nLevel,CHAR cString[]) {
+	STACK_VAR CHAR cLevel[16]
 	//---Sends the appropriate debug strings to the console.
 	//---1-ERRORS Only
 	//---2-Asynchronous Strings from Device
@@ -48,7 +50,14 @@ DEFINE_FUNCTION DebugString(INTEGER nLevel,CHAR cString[]) {
 	//---4-All Data & parsing)
 	
 	IF(nLevel<=BBox.Debug.nDebugLevel) {
-		SEND_STRING 0,"'BoxeeBox - ',cString"
+		SWITCH (nLevel) {
+			CASE 1 : cLevel = 'ERROR'
+			CASE 2 : cLevel = 'WARNING'
+			CASE 3 : cLevel = 'INFO'
+			CASE 4 : cLevel = 'DEBUG'
+			DEFAULT : cLevel = 'DEBUG'
+		}
+		SEND_STRING 0,"'BoxeeBox ',BBox.Debug.cDPS,': ',cLevel,'-',cString"
 	}
 }
 DEFINE_FUNCTION SendQue() {
@@ -250,6 +259,7 @@ DEFINE_EVENT
 		ONLINE : {
 			//---Default poll time
 			SEND_COMMAND vdvDev,"'PROPERTY-Poll_Time,60'"
+			BBox.Debug.cDPS = "ITOA(DATA.DEVICE.NUMBER),':',ITOA(DATA.DEVICE.PORT),':',ITOA(DATA.DEVICE.SYSTEM)"
 		}
 		COMMAND : {
 			//---Parse commands send to the virtual from Master code.
