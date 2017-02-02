@@ -48,9 +48,9 @@ Please refer to the Demo AMX workspace for guidance on implementation.
 | CLEARBUF | Clears buffer of acks returned from Boxee |
 | REINIT | Clears buffers and reinitializes the module |
 
-| UI Button Channels |    |
-|---|---|
-| 1 | Play |
+| Channel | Control   |
+|---------|-----------|
+| 1       | Play      |
 | 2 | Stop |
 | 3 | Pause |
 | 5 | Next Track |
